@@ -167,36 +167,34 @@ report formatter → email send
 ---
 
 ## System Architecture
-┌─────────────────────────────────────────────────────┐
+
 │ LEAD INTAKE │
 │ Form / Webhook → Workflow 1 │
 │ AI Scoring → Counsellor Assignment │
-└────────────────────┬────────────────────────────────┘
+
 │
 ▼
-┌─────────────────────────────────────────────────────┐
+
 │ RECORD CREATION │
 │ Workflow 2 → Generate Student ID │
 │ Create Row in Pipeline Sheet │
 │ Notify Counsellor │
-└────────────────────┬────────────────────────────────┘
+
 │
 ▼
-┌─────────────────────────────────────────────────────┐
+
 │ PIPELINE MANAGEMENT │
 │ Workflow 3 → Form Submission │
 │ Update Stage → Email Student │
 │ Notify Team │
-└────────────────────┬────────────────────────────────┘
+
 │
 ▼
-┌─────────────────────────────────────────────────────┐
+
 │ WEEKLY REPORTING │
 │ Workflow 4 → Every Monday 08:00 WAT │
 │ Read All Records → Group by Stage │
 │ Send Digest to Team │
-└─────────────────────────────────────────────────────┘
-
 
 ---
 
