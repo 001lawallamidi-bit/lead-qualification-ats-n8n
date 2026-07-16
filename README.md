@@ -1,7 +1,7 @@
-# lead-qualification-ats-n8n
+# Study-Abroad-Lead-Intelligence-Auto-Assignment-System-n8n
 AI-powered lead intake, qualification, and student pipeline management system built with n8n
 
-# Lead Qualification & ATS Pipeline System
+# Study Abroad Lead Intelligence & Auto-Assignment System
 
 An end-to-end, fully automated lead intake and student tracking system 
 built with n8n for overseas education agencies in Nigeria. Four integrated workflows 
