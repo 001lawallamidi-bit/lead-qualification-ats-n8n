@@ -38,29 +38,53 @@ New lead arrives via form or webhook
 ↓
 
 Workflow 1 — AI evaluates and scores the lead
+
 ↓
+
 Qualified lead is assigned to the right counsellor
+
 ↓
+
 Team is notified instantly
+
 ↓
+
 Workflow 2 — Unique Student ID generated
+
 ↓
+
 Student record created in pipeline tracker
+
 ↓
+
 Stage set to New Inquiry automatically
+
 ↓
+
 Assigned counsellor notified
+
 ↓
+
 Workflow 3 — Counsellor updates stage via form submission
+
 ↓
+
 Student receives stage-specific email
+
 ↓
+
 Team notified of stage change
+
 ↓
+
 Workflow 4 — Every Monday 8AM Lagos time
+
 ↓
+
 All records read, grouped by stage
+
 ↓
+
 Full pipeline report sent to team
 
 ---
