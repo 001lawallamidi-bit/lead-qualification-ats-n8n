@@ -34,7 +34,9 @@ This system eliminates all of that.
 ### The Full Journey — From Lead to Weekly Report
 
 New lead arrives via form or webhook
+
 ↓
+
 Workflow 1 — AI evaluates and scores the lead
 ↓
 Qualified lead is assigned to the right counsellor
