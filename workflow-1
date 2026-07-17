@@ -1,0 +1,976 @@
+{
+  "name": "Study Abroad Lead Intelligence & Auto-Assignment System",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "YOUR_FORM_WEBHOOK_PATH",
+        "formTitle": "Study Abroad Eligibility Evaluation",
+        "formDescription": "Evaluate your chances based on current Nigerian market realities (Exchange rates and POF requirements).",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Full Name",
+              "fieldType": "textarea",
+              "placeholder": "Full Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "WhatsApp Number",
+              "fieldType": "textarea",
+              "placeholder": "WhatsApp Number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email Address",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Preferred Destination",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  { "option": "United Kingdom" },
+                  { "option": "Canada" },
+                  { "option": "Australia" },
+                  { "option": "USA" }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Do you have a valid international passport?",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  { "option": "Yes" },
+                  { "option": "No" },
+                  { "option": "No, but in process" }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Highest Qualification",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  { "option": "SSCE" },
+                  { "option": "OND" },
+                  { "option": "HND" },
+                  { "option": "Bachelor's Degree (BSc, BA, BEng, LLB, MBBS)" },
+                  { "option": "Nigeria Certificate in Education (NCE)" },
+                  { "option": "Postgraduate Diploma (PGD)" },
+                  { "option": "Master's Degree (MA, MSc, MBA)" },
+                  { "option": "Doctoral Degree (PhD)" }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "What was your course of study?",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Grade graduated with",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  { "option": "First Class" },
+                  { "option": "Second Class Upper (2:1)" },
+                  { "option": "Second Class Lower (2:2)" },
+                  { "option": "Third Class" },
+                  { "option": "Pass" },
+                  { "option": "Distinction" },
+                  { "option": "Upper Credit" },
+                  { "option": "Lower Credit" }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "What course do you intend to study abroad?",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "What intake are you looking at?",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  { "option": "September / October / Fall Intake" },
+                  { "option": "January / February / Winter Intake" },
+                  { "option": "May / June / Spring Intake " }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Will your dependent(s) be joining you?",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  { "option": "Yes" },
+                  { "option": "No" },
+                  { "option": "Not now, but later" }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Tuition & POF Budget (Naira)",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  { "option": "10 Million" },
+                  { "option": "10 Million & Above" },
+                  { "option": "15 Million & Above" },
+                  { "option": "20 Million & Above" }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Have you been refused visa for any country?",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  { "option": "Yes" },
+                  { "option": "No" }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d9b62ff7-f208-4e27-999e-461bd1cd07df",
+      "name": "n8n Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.1,
+      "position": [208, 416],
+      "webhookId": "YOUR_FORM_WEBHOOK_PATH"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer YOUR_GROQ_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"openai/gpt-oss-120b\",\n  \"temperature\": 0.2,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an expert Nigerian Study Abroad Consultant and Lead Qualification Specialist with deep knowledge of current Nigerian market realities, visa requirements, and the study abroad industry. Your job is to evaluate leads and score their readiness to study abroad based on the parameters provided. Return only valid JSON with status, readiness_score, budget_assessment, academic_assessment, grade_assessment, timeline_assessment, scholarship_flag, risk_flags, recommended_action, and reasoning.\\n\\nUse the following qualification logic:\\n\\nBUDGET ASSESSMENT (Nigerian Market Reality):\\n- UK: Minimum viable budget is 15M Naira and above (tuition + POF). Below 15M Naira = medium risk.\\n- Canada: Minimum viable budget is 15M Naira and above (tuition + GIC + POF). Below 15M Naira = medium risk.\\n- US: Minimum viable budget is 20M Naira and above (tuition + POF/bank statement). Below 20M Naira = medium risk.\\n- Australia: Minimum viable budget is 15M Naira and above. Below 15M Naira = medium risk.\\n- Other destinations (e.g., Cyprus, Malta, Hungary, Poland, Germany): 10M to 25M Naira may be viable.\\n\\nQUALIFICATION AND ACADEMIC BACKGROUND:\\n- BSc or HND and above = strong academic foundation for Masters programs.\\n- OND or NCE = may only qualify for undergraduate programs abroad.\\n- WAEC or SSCE only = limited options, mostly foundation or pathway programs.\\n- Course alignment between past study and intended course abroad matters.\\n\\nGRADUATION GRADE ASSESSMENT:\\nThis is a critical factor for admissions eligibility, especially for top-tier universities abroad. Evaluate grades as follows:\\n\\nFor BSc or HND holders applying for Masters programs:\\n- First Class = Excellent. Eligible for top-ranked universities and scholarship consideration. Strong asset.\\n- Second Class Upper (2:1) = Very Good. Meets the minimum requirement for most Masters programs at good universities in UK, Canada, US, and Australia.\\n- Second Class Lower (2:2) = Acceptable. Eligible for some Masters programs but may be limited to lower-ranked universities or require work experience to compensate. Flags as a mild risk for competitive destinations.\\n- Third Class = High risk for Masters admission. Most reputable universities will not accept. May need a Pre-Masters or pathway program first. Flag as a significant risk.\\n- Pass = Very high risk. Severely limits options for postgraduate study abroad. Flag as a major risk.\\n\\nFor HND holders with Credit grades applying for top-up or postgraduate programs:\\n- Distinction = Excellent. Strong candidacy.\\n- Upper Credit = Very Good. Meets most requirements.\\n- Lower Credit = Acceptable but may limit options at competitive institutions.\\n\\nFor OND holders:\\n- Distinction or Upper Credit = Strong for undergraduate entry.\\n- Lower Credit = Acceptable but limited options.\\n\\nGeneral Grade Rules:\\n- First Class and Distinction graduates may be flagged for scholarship opportunities.\\n- Third Class and Pass graduates should be advised on pathway or pre-masters programs rather than direct Masters entry.\\n- Always cross-reference the grade with the destination country university entry requirements.\\n- A strong grade can partially compensate for a slightly low budget or minor timeline issues.\\n- A weak grade combined with other risk factors (low budget, visa refusal, no passport) significantly lowers the readiness score.\\n\\nPASSPORT:\\n- No passport = not ready; significant processing time needed.\\n- Valid passport = ready to proceed.\\n\\nINTAKE TIMING:\\n- Applying for an intake within 2 to 3 months with no passport or low budget = unrealistic timeline.\\n- September, January, and May intakes should be assessed against current month context.\\n\\nVISA REFUSAL HISTORY:\\n- Previous visa refusal(s) = higher risk, requires detailed review and documentation strategy.\\n- Multiple refusals = needs specialist intervention before proceeding.\\n\\nDEPENDENTS:\\n- Dependents joining significantly increases POF and overall budget requirements, especially for UK and Canada.\\n- Must factor additional funds per dependent into budget assessment.\\n\\nREADINESS SCORING:\\nReturn one of the following statuses:\\n- Qualified: Strong budget, valid passport, good to excellent grade, clear academic path, realistic intake, no red flags.\\n- Partially Qualified: Meets most criteria but has 1 to 2 manageable gaps (e.g., slightly low budget, no passport yet, 2:2 grade, minor refusal history).\\n- Needs Review: Multiple red flags such as very low budget for destination, no passport, visa refusals, unrealistic timeline, misaligned qualifications, or Third Class and Pass grades applying for direct Masters entry.\\n\\nAlways return a valid JSON object with exactly these fields:\\n{\\n  \\\"status\\\": \\\"Qualified\\\" or \\\"Partially Qualified\\\" or \\\"Needs Review\\\",\\n  \\\"readiness_score\\\": a number from 1 to 100,\\n  \\\"budget_assessment\\\": \\\"your assessment here\\\",\\n  \\\"academic_assessment\\\": \\\"your assessment here\\\",\\n  \\\"grade_assessment\\\": \\\"your assessment of the graduation grade and its impact on admissions eligibility here\\\",\\n  \\\"timeline_assessment\\\": \\\"your assessment here\\\",\\n  \\\"scholarship_flag\\\": \\\"Yes\\\" or \\\"No\\\",\\n  \\\"risk_flags\\\": [\\\"flag one\\\", \\\"flag two\\\"],\\n  \\\"recommended_action\\\": \\\"your recommendation here\\\",\\n  \\\"reasoning\\\": \\\"your full reasoning here\\\"\\n}\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Please evaluate the following lead:\\n\\n- Full Name: {{ $json['Full Name'] }}\\n- WhatsApp Number: {{ $json['WhatsApp Number'] }}\\n- Preferred Destination: {{ $json['Preferred Destination'] }}\\n- Valid International Passport: {{ $json['Do you have a valid international passport?'] }}\\n- Highest Qualification: {{ $json['Highest Qualification'] }}\\n- Course of Study Past: {{ $json['What was your course of study?'] }}\\n- Grade Graduated With: {{ $json['Grade graduated with'] }}\\n- Intended Course Abroad: {{ $json['What course do you intend to study abroad?'] }}\\n- Target Intake: {{ $json['What intake are you looking at?'] }}\\n- Dependents Joining: {{ $json['Will your dependent(s) be joining you?'] }}\\n- Tuition and POF Budget in Naira: {{ $json['Tuition & POF Budget (Naira)'] }}\\n- Visa Refusal History: {{ $json['Have you been refused visa for any country?'] }}\\n\\nEvaluate this lead thoroughly and return the qualification JSON.\"\n    }\n  ],\n  \"response_format\": {\n    \"type\": \"json_object\"\n  }\n}",
+        "options": {}
+      },
+      "id": "a731a287-a8bc-4c98-a300-7bfda2959287",
+      "name": "AI Evaluation (Groq)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [640, 416],
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "name": "={{ $('n8n Form Trigger').item.json['Full Name'] }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID",
+          "mode": "list",
+          "cachedResultName": "Students_Intake_Folder",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/YOUR_GOOGLE_DRIVE_FOLDER_ID"
+        },
+        "options": {}
+      },
+      "id": "2b027cd0-5800-47e4-8ccd-fa5172ef79c2",
+      "name": "Drive: Create Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1568, 256],
+      "retryOnFail": true,
+      "notesInFlow": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL_ID",
+          "name": "Google Drive-Study-Abroad"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.assigned_counsellor_email }}",
+        "subject": "=🚨 New Lead: {{ $json['Full Name'] }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n\n<link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap\" rel=\"stylesheet\">\n\n<style>\n  body {\n    font-family: 'Inter';\n    background-color: #f4f4f4;\n    margin: 0;\n    padding: 0;\n  }\n\n  .container {\n    max-width: 650px;\n    margin: 30px auto;\n    background-color: #ffffff;\n    border-radius: 8px;\n    overflow: hidden;\n    box-shadow: 0 2px 8px rgba(0,0,0,0.1);\n  }\n\n  .header {\n    background-color: #1a3c6e;\n    padding: 24px 30px;\n    text-align: center;\n  }\n\n  .header h1 {\n    color: #ffffff;\n    margin: 0;\n    font-size: 22px;\n  }\n\n  .header p {\n    color: #a8c4e0;\n    margin: 6px 0 0;\n    font-size: 13px;\n  }\n\n  .section {\n    padding: 24px 30px;\n    border-bottom: 1px solid #eeeeee;\n  }\n\n  .section h2 {\n    font-size: 15px;\n    color: #1a3c6e;\n    margin: 0 0 14px;\n    text-transform: uppercase;\n  }\n\n  .lead-grid {\n    display: grid;\n    grid-template-columns: repeat(2, 1fr);\n    gap: 12px;\n    margin-top: 12px;\n  }\n\n  .lead-card {\n    background: #f8fafc;\n    border: 1px solid #e6eaf0;\n    border-radius: 10px;\n    padding: 12px 14px;\n  }\n\n  .lead-card:hover {\n    background: #ffffff;\n    border-color: #d7dee8;\n  }\n\n  .label {\n    font-size: 11px;\n    letter-spacing: 0.6px;\n    text-transform: uppercase;\n    color: #6b7280;\n    margin-bottom: 6px;\n  }\n\n  .value {\n    font-size: 14px;\n    font-weight: 500;\n    color: #111827;\n    word-break: break-word;\n  }\n\n  .score-box {\n    text-align: center;\n    padding: 16px;\n    background-color: #f0f4ff;\n    border-radius: 6px;\n    margin-bottom: 16px;\n  }\n\n  .score-number {\n    font-size: 48px;\n    font-weight: bold;\n    color: #1a3c6e;\n  }\n\n  .grade-box {\n    background-color: #f0f4ff;\n    border-left: 4px solid #1a3c6e;\n    padding: 12px 16px;\n    border-radius: 4px;\n  }\n\n  .risk-yes {\n    background-color: #fff5f5;\n    border-left: 4px solid #dc3545;\n    padding: 12px 16px;\n    color: #c0392b;\n  }\n\n  .risk-none {\n    background-color: #f0fff4;\n    border-left: 4px solid #28a745;\n    padding: 12px 16px;\n    color: #27ae60;\n  }\n\n  .reasoning-box {\n    background-color: #f9f9f9;\n    padding: 14px 16px;\n    border-radius: 6px;\n    color: #444;\n  }\n\n  .action-box {\n    background-color: #1a3c6e;\n    color: #ffffff;\n    padding: 14px 16px;\n    border-radius: 6px;\n  }\n\n  .footer {\n    text-align: center;\n    padding: 20px;\n    font-size: 12px;\n    color: #aaaaaa;\n    background-color: #f4f4f4;\n  }\n\n</style>\n</head>\n\n<body>\n\n<div class=\"container\">\n\n  <div class=\"header\">\n    <h1>📋 Study Abroad Lead Evaluation</h1>\n    <p>Automated qualification report from your lead pipeline</p>\n  </div>\n\n  <div class=\"section\">\n    <h2>👤 Lead Information</h2>\n\n    <div class=\"lead-grid\">\n\n      <div class=\"lead-card\">\n        <div class=\"label\">Full Name</div>\n        <div class=\"value\">{{ $json['Full Name'] }}</div>\n      </div>\n\n      <div class=\"lead-card\">\n        <div class=\"label\">Submission Time</div>\n        <div class=\"value\">{{ $json.submission_timestamp }}</div>\n      </div>\n\n      <div class=\"lead-card\">\n        <div class=\"label\">WhatsApp Number</div>\n        <div class=\"value\">{{ $json['WhatsApp Number'] }}</div>\n      </div>\n\n      <div class=\"lead-card\">\n        <div class=\"label\">Email Address</div>\n        <div class=\"value\">{{ $json['Email Address'] }}</div>\n      </div>\n\n      <div class=\"lead-card\">\n        <div class=\"label\">Preferred Destination</div>\n        <div class=\"value\">{{ $json['Preferred Destination'] }}</div>\n      </div>\n\n      <div class=\"lead-card\">\n        <div class=\"label\">Passport</div>\n        <div class=\"value\">{{ $json['Do you have a valid international passport?'] }}</div>\n      </div>\n\n      <div class=\"lead-card\">\n        <div class=\"label\">Highest Qualification</div>\n        <div class=\"value\">{{ $json['Highest Qualification'] }}</div>\n      </div>\n\n      <div class=\"lead-card\">\n        <div class=\"label\">Course of Study (Past)</div>\n        <div class=\"value\">{{ $json['What was your course of study?'] }}</div>\n      </div>\n\n      <div class=\"lead-card\">\n        <div class=\"label\">Grade</div>\n        <div class=\"value\">{{ $json['Grade graduated with'] }}</div>\n      </div>\n\n      <div class=\"lead-card\">\n        <div class=\"label\">Intended Course</div>\n        <div class=\"value\">{{ $json['What course do you intend to study abroad?'] }}</div>\n      </div>\n\n      <div class=\"lead-card\">\n        <div class=\"label\">Target Intake</div>\n        <div class=\"value\">{{ $json['What intake are you looking at?'] }}</div>\n      </div>\n\n      <div class=\"lead-card\">\n        <div class=\"label\">Dependent Joining</div>\n        <div class=\"value\">{{ $json['Will your dependent(s) be joining you?'] }}</div>\n      </div>\n\n      <div class=\"lead-card\">\n        <div class=\"label\">Budget</div>\n        <div class=\"value\">{{ $json['Tuition & POF Budget (Naira)'] }}</div>\n      </div>\n\n      <div class=\"lead-card\">\n        <div class=\"label\">Visa Refusal</div>\n        <div class=\"value\">{{ $json['Have you been refused visa for any country?'] }}</div>\n      </div>\n\n      <div class=\"lead-card\">\n        <div class=\"label\">Counsellor</div>\n        <div class=\"value\">{{ $json.assigned_counsellor_name }}</div>\n      </div>\n\n      <div class=\"lead-card\">\n        <div class=\"label\">Counsellor Phone</div>\n        <div class=\"value\">{{ $json.assigned_counsellor_phone }}</div>\n      </div>\n\n    </div>\n  </div>\n\n  <div class=\"section\">\n    <h2>📊 AI Readiness Score</h2>\n    <div class=\"score-box\">\n      <div class=\"score-number\">\n        {{ $('Parse AI Response / Evaluation').item.json.readiness_score }}/100\n      </div>\n    </div>\n  </div>\n\n  <div class=\"section\">\n    <h2>🎓 Grade Assessment</h2>\n    <div class=\"grade-box\">\n      {{ $('Parse AI Response / Evaluation').item.json.grade_assessment }}\n    </div>\n\n    <div style=\"margin-top:14px;\">\n      <strong>Scholarship Candidate:</strong><br/>\n      <span>{{ $('Parse AI Response / Evaluation').item.json.scholarship_flag }}</span>\n    </div>\n  </div>\n\n  <div class=\"section\">\n    <h2>🚩 Risk Flags</h2>\n    <div class=\"{{ $json.risk_flags !== 'None' ? 'risk-yes' : 'risk-none' }}\">\n      {{ $('Parse AI Response / Evaluation').item.json.risk_flags }}\n    </div>\n  </div>\n\n  <div class=\"section\">\n    <h2>🧠 AI Reasoning</h2>\n    <div class=\"reasoning-box\">\n      {{ $('Parse AI Response / Evaluation').item.json.reasoning }}\n    </div>\n  </div>\n\n  <div class=\"section\">\n    <h2>📌 Recommended Action</h2>\n    <div class=\"action-box\">\n      {{ $('Parse AI Response / Evaluation').item.json.recommended_action }}\n    </div>\n  </div>\n\n  <div class=\"footer\">\n    This report was automatically generated by your Study Abroad Lead Pipeline.<br/>\n    Please do not reply to this email.\n  </div>\n\n</div>\n\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "f0696df9-d4e1-44b8-bba5-ad6d004f4cac",
+      "name": "Gmail: Notify",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [2512, 304],
+      "webhookId": "YOUR_GMAIL_NOTIFY_WEBHOOK_ID",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account-Study-Abroad"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json['Email Address'] }}",
+        "subject": "Confirmation: Your Study Abroad Evaluation is in Progress!",
+        "message": "=<h3>Hello {{ $node[\"n8n Form Trigger\"].json[\"Full Name\"] }},</h3>\n<p>We have received your study abroad evaluation request for <b>{{ $node[\"n8n Form Trigger\"].json[\"Preferred Destination\"] }}</b>.</p>\n<p>We are currently reviewing your eligibility. You will receive another email shortly with your assigned counsellor's details</b>.</p>\n<p>Regards, \n<p>Study Abroad Agency </p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [448, 256],
+      "id": "a26c7951-0b10-47cb-b8b5-85d92d8aebba",
+      "name": "Student Acknowledgment",
+      "webhookId": "YOUR_STUDENT_ACK_WEBHOOK_ID",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account-Study-Abroad"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json['Email Address'] }}",
+        "subject": "Update: Your Personal Counsellor has been assigned!",
+        "message": "=<h3>Great news! {{ $json['Full Name'] }}!</h3>\n\n<p>We have assigned a senior counsellor to assist you with your application to <b>{{ $json['Preferred Destination'] }}</b>.</p>\n\n<p><b>Your Personal Counsellor:</b><br>\nName: {{ $json.assigned_counsellor_name }}<br>\nEmail: {{ $('Assign Next Counsellor').item.json.assigned_counsellor_email }}<br>\nWhatsapp Number: {{ $('Assign Next Counsellor').item.json.assigned_counsellor_phone }}\n\n<p>They have received your evaluation and will reach out to you shortly via WhatsApp or Email to discuss the next steps.</p>\n\n<p>Best Regards,<br>\n<strong>The Admissions Team</strong></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [2480, 112],
+      "id": "73bb30fb-0d9a-4eb7-b8ee-3c6cb358b575",
+      "name": "Assignment Notification",
+      "webhookId": "YOUR_ASSIGNMENT_NOTIF_WEBHOOK_ID",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account-Study-Abroad"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawContent = $input.first().json.choices[0].message.content;\n\n// Parse only the AI JSON response\nconst parsed = JSON.parse(rawContent);\n\nreturn {\n  json: {\n    // ---- AI Evaluation Fields ----\n    status: parsed.status ?? \"\",\n    readiness_score: parsed.readiness_score ?? 0,\n    budget_assessment: parsed.budget_assessment ?? \"\",\n    academic_assessment: parsed.academic_assessment ?? \"\",\n    grade_assessment: parsed.grade_assessment ?? \"\",\n    timeline_assessment: parsed.timeline_assessment ?? \"\",\n    scholarship_flag: parsed.scholarship_flag ?? \"No\",\n    risk_flags: Array.isArray(parsed.risk_flags) && parsed.risk_flags.length > 0\n      ? parsed.risk_flags.join(\"; \")\n      : \"None\",\n    recommended_action: parsed.recommended_action ?? \"\",\n    reasoning: parsed.reasoning ?? \"\",\n\n    // ---- Submission Timestamp (WAT - West Africa Time) ----\n    submission_timestamp: new Date().toLocaleString(\"en-GB\", {\n      timeZone: \"Africa/Lagos\",\n      day: \"2-digit\",\n      month: \"long\",\n      year: \"numeric\",\n      hour: \"2-digit\",\n      minute: \"2-digit\",\n      second: \"2-digit\",\n      hour12: true\n    })\n  }\n};",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [896, 416],
+      "id": "18f0e89f-80f0-4e4a-98e9-f18f86e3c4c3",
+      "name": "Parse AI Response / Evaluation",
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [1104, 256],
+      "id": "63a00902-7d90-4d1e-a589-96038dd95c64",
+      "name": "Merge",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $items('Merge', 0, 0)[0].json; \nconst allRows = $input.all().map(i => i.json);\n\n// 1. Filter active counsellors and grab their Last_Assigned timestamp\nconst counsellors = allRows\n  .filter(r => String(r.Active ?? '').trim().toLowerCase() === 'true')\n  .map(c => ({\n    ...c,\n    _lastAssigned: c.Last_Assigned ? String(c.Last_Assigned).trim() : ''\n  }));\n\nif (counsellors.length === 0) {\n  throw new Error('No active counsellors found.');\n}\n\n// 2. Sort: Blanks first -> Oldest timestamp -> Counsellor_ID tie-breaker\ncounsellors.sort((a, b) => {\n  if (!a._lastAssigned && b._lastAssigned) return -1;\n  if (!b._lastAssigned && a._lastAssigned) return 1;\n  if (a._lastAssigned !== b._lastAssigned) return a._lastAssigned.localeCompare(b._lastAssigned);\n  return String(a.Counsellor_ID ?? '').localeCompare(String(b.Counsellor_ID ?? ''));\n});\n\n// 3. Pick the first one in the sorted list\nconst assigned = counsellors[0];\n\n// 4. Output\nreturn [\n  {\n    json: {\n      ...lead,\n      assigned_counsellor_id: assigned.Counsellor_ID ?? '',\n      assigned_counsellor_name: assigned.Name ?? '',\n      assigned_counsellor_email: assigned.Email ?? '',\n      assigned_counsellor_phone: assigned.Phone ?? assigned['Whatsapp Number'] ?? '',\n      assignment_pool_debug: counsellors.map(c => \n        `${c.Counsellor_ID === assigned.Counsellor_ID ? '>>> ' : ''}${c.Counsellor_ID} - ${c.Name} (${c._lastAssigned || 'blank'})`\n      ).join(' | ')\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2032, 400],
+      "id": "07a4df26-1665-4ed5-9e25-1500cf527c5a",
+      "name": "Assign Next Counsellor",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "Copy of StudyAbroad CRM",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_COUNSELLORS_SHEET_GID",
+          "mode": "list",
+          "cachedResultName": "Counsellors",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit#gid=YOUR_COUNSELLORS_SHEET_GID"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "id": "06483e9a-bf82-41d0-b5be-6b77ce0d66d4",
+      "name": "Get Counsellors",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1776, 256],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets-Study-Abroad"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "Copy of StudyAbroad CRM",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_COUNSELLORS_SHEET_GID",
+          "mode": "list",
+          "cachedResultName": "Counsellors",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit#gid=YOUR_COUNSELLORS_SHEET_GID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Last_Assigned": "={{ $now.setZone('Africa/Lagos').toFormat('yyyy-LL-dd HH:mm:ss') }}",
+            "Counsellor_ID": "={{ $('Assign Next Counsellor').item.json.assigned_counsellor_id }}"
+          },
+          "matchingColumns": [
+            "Counsellor_ID"
+          ],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Counsellor_ID",
+              "displayName": "Counsellor_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Active",
+              "displayName": "Active",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last_Assigned",
+              "displayName": "Last_Assigned",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "e63872fb-d1da-4a19-a49f-c233cf6d16a6",
+      "name": "Update Last Assigned",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [2512, 480],
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets-Study-Abroad"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "Copy of StudyAbroad CRM",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads_Master",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email Address": "={{ $json['Email Address'] }}",
+            "Submission Timestamp": "={{ $json.submission_timestamp }}",
+            "Full Name": "={{ $json['Full Name'] }}",
+            "WhatsApp Number": "={{ $json['WhatsApp Number'] }}",
+            "Preferred Destination": "={{ $json['Preferred Destination'] }}",
+            "Has Passport": "={{ $json['Do you have a valid international passport?'] }}",
+            "Highest Qualification": "={{ $json['Highest Qualification'] }}",
+            "Course of Study": "={{ $json['What was your course of study?'] }}",
+            "Grade Graduated With": "={{ $json['Grade graduated with'] }}",
+            "Intended Course Abroad": "={{ $json['What course do you intend to study abroad?'] }}",
+            "Dependents Joining": "={{ $json['Will your dependent(s) be joining you?'] }}",
+            "Intake": "={{ $json['What intake are you looking at?'] }}",
+            "Budget (Naira)": "={{ $json['Tuition & POF Budget (Naira)'] }}",
+            "Visa Refusal History": "={{ $json['Have you been refused visa for any country?'] }}",
+            "Status": "={{ $json.status }}",
+            "Readiness Score": "={{ $json.readiness_score }}",
+            "Budget Assessment": "={{ $json.budget_assessment }}",
+            "Academic Assessment": "={{ $json.academic_assessment }}",
+            "Grade Assessment": "={{ $json.grade_assessment }}",
+            "Timeline Assessment": "={{ $json.timeline_assessment }}",
+            "Scholarship Flag": "={{ $json.scholarship_flag }}",
+            "Risk Flags": "={{ $json.risk_flags }}",
+            "Recommended Action": "={{ $json.recommended_action }}",
+            "Reasoning": "={{ $json.reasoning }}"
+          },
+          "matchingColumns": [
+            "Email Address"
+          ],
+          "schema": [
+            {
+              "id": "Submission Timestamp",
+              "displayName": "Submission Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "WhatsApp Number",
+              "displayName": "WhatsApp Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Preferred Destination",
+              "displayName": "Preferred Destination",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Has Passport",
+              "displayName": "Has Passport",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Highest Qualification",
+              "displayName": "Highest Qualification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Course of Study",
+              "displayName": "Course of Study",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Grade Graduated With",
+              "displayName": "Grade Graduated With",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Intended Course Abroad",
+              "displayName": "Intended Course Abroad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Dependents Joining",
+              "displayName": "Dependents Joining",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Intake",
+              "displayName": "Intake",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget (Naira)",
+              "displayName": "Budget (Naira)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Visa Refusal History",
+              "displayName": "Visa Refusal History",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Readiness Score",
+              "displayName": "Readiness Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget Assessment",
+              "displayName": "Budget Assessment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Academic Assessment",
+              "displayName": "Academic Assessment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Grade Assessment",
+              "displayName": "Grade Assessment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timeline Assessment",
+              "displayName": "Timeline Assessment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Scholarship Flag",
+              "displayName": "Scholarship Flag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Risk Flags",
+              "displayName": "Risk Flags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Recommended Action",
+              "displayName": "Recommended Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reasoning",
+              "displayName": "Reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "5a26bc85-aa2d-4f5f-9bd0-de03795f9c85",
+      "name": "Log Lead",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1344, 256],
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets-Study-Abroad"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "#\n**Study Abroad Lead Intelligence & Auto-Assignment System**",
+        "height": 80,
+        "width": 512
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [192, 32],
+      "typeVersion": 1,
+      "id": "c9732c70-1d3c-41ba-abe5-302f1b7d6aba",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_STUDENT_RECORD_WEBHOOK_URL",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "Full Name",
+              "value": "={{ $('Merge').item.json['Full Name'] }}"
+            },
+            {
+              "name": "WhatsApp Number",
+              "value": "={{ $('Merge').item.json['WhatsApp Number'] }}"
+            },
+            {
+              "name": "Email Address",
+              "value": "={{ $json['Email Address'] }}"
+            },
+            {
+              "name": "Preferred Destination",
+              "value": "={{ $('Merge').item.json['Preferred Destination'] }}"
+            },
+            {
+              "name": "What course do you intend to study abroad?",
+              "value": "={{ $('Merge').item.json['What course do you intend to study abroad?'] }}"
+            },
+            {
+              "name": "What intake are you looking at?",
+              "value": "={{ $('Merge').item.json['What intake are you looking at?'] }}"
+            },
+            {
+              "name": "Tuition & POF Budget (Naira)",
+              "value": "={{ $('Merge').item.json['Tuition & POF Budget (Naira)'] }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $('Merge').item.json.status }}"
+            },
+            {
+              "name": "readiness_score",
+              "value": "={{ $('Merge').item.json.readiness_score }}"
+            },
+            {
+              "name": "assigned_counsellor_name",
+              "value": "={{ $('Assign Next Counsellor').item.json.assigned_counsellor_name }}"
+            },
+            {
+              "name": "assigned_counsellor_email",
+              "value": "={{ $json.assigned_counsellor_email }}"
+            },
+            {
+              "name": "assigned_counsellor_phone",
+              "value": "={{ $json.assigned_counsellor_phone }}"
+            },
+            {
+              "name": "assigned_counsellor_id",
+              "value": "={{ $json.assigned_counsellor_id }}"
+            },
+            {
+              "name": "folder_link",
+              "value": "={{ 'https://drive.google.com/drive/folders/' + $('Drive: Create Folder').item.json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2512, 720],
+      "id": "3a332717-5494-45cb-aa82-d7e5b9ecb624",
+      "name": "Trigger: Create Student Record"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Evaluation (Groq)": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response / Evaluation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "n8n Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Student Acknowledgment",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Evaluation (Groq)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Drive: Create Folder": {
+      "main": [
+        [
+          {
+            "node": "Get Counsellors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response / Evaluation": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Log Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assign Next Counsellor": {
+      "main": [
+        [
+          {
+            "node": "Assignment Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gmail: Notify",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Last Assigned",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Trigger: Create Student Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Counsellors": {
+      "main": [
+        [
+          {
+            "node": "Assign Next Counsellor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Lead": {
+      "main": [
+        [
+          {
+            "node": "Drive: Create Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "YOUR_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "nodeGroups": [],
+  "id": "YOUR_WORKFLOW_ID",
+  "tags": []
+}
