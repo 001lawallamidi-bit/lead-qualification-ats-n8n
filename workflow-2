@@ -1,0 +1,357 @@
+{
+  "name": "Application Tracking System — Create Student Record",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-student-record",
+        "options": {
+          "responseCode": {
+            "values": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [208, 112],
+      "id": "c0beee1d-355a-49cc-8189-ab052e057a1e",
+      "name": "Webhook",
+      "webhookId": "YOUR_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Handle both nested body and flat incoming data\nconst incoming = $input.first().json;\nconst lead = incoming.body ?? incoming;\n\n// Generate unique Student ID\nconst timestamp = Date.now().toString(36).toUpperCase();\nconst random = Math.random().toString(36).substring(2, 6).toUpperCase();\nconst studentId = `STU-${timestamp}-${random}`;\n\nconst stageMap = {\n  'New Inquiry': 1,\n  'Qualified Lead': 2,\n  'Counselling Completed': 3,\n  'Application Started': 4,\n  'Documents Submitted': 5,\n  'University Submission': 6,\n  'Offer Letter Received': 7,\n  'Visa Processing': 8,\n  'Visa Approved': 9\n};\n\nconst currentStage = 'New Inquiry';\n\nconst now = new Date().toLocaleString('en-GB', {\n  timeZone: 'Africa/Lagos',\n  day: '2-digit',\n  month: 'long',\n  year: 'numeric',\n  hour: '2-digit',\n  minute: '2-digit',\n  second: '2-digit',\n  hour12: false\n});\n\nreturn [\n  {\n    json: {\n      ...lead,\n      student_id: studentId,\n      current_stage: currentStage,\n      stage_number: stageMap[currentStage],\n      date_created: now,\n      stage_updated_at: now\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [416, 112],
+      "id": "436cb829-f6ae-4fff-80d6-0c0723d90437",
+      "name": "Generate Student ID"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "Copy of StudyAbroad CRM",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_STUDENT_PIPELINE_SHEET_GID",
+          "mode": "list",
+          "cachedResultName": "Student Pipeline",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit#gid=YOUR_STUDENT_PIPELINE_SHEET_GID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Student_ID": "={{ $json.student_id }}",
+            "Full Name": "={{ $json['Full Name'] }}",
+            "WhatsApp Number": "={{ $json['WhatsApp Number'] }}",
+            "Preferred Destination": "={{ $json['Preferred Destination'] }}",
+            "Intended Course": "={{ $json['What course do you intend to study abroad?'] }}",
+            "Target Intake": "={{ $json['What intake are you looking at?'] }}",
+            "Budget": "={{ $json['Tuition & POF Budget (Naira)'] }}",
+            "AI Status": "={{ $json.status }}",
+            "Readiness Score": "={{ $json.readiness_score }}",
+            "Assigned Counsellor": "={{ $json.assigned_counsellor_name }}",
+            "Counsellor Email": "={{ $json.assigned_counsellor_email }}",
+            "Current Stage": "={{ $json.current_stage }}",
+            "Stage Number": "={{ $json.stage_number }}",
+            "Stage Updated At": "={{ $json.stage_updated_at }}",
+            "Drive Folder Link": "={{ $json.folder_link }}",
+            "Date Created": "={{ $json.date_created }}",
+            "Email Address": "={{ $json['Email Address'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Student_ID",
+              "displayName": "Student_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "WhatsApp Number",
+              "displayName": "WhatsApp Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Preferred Destination",
+              "displayName": "Preferred Destination",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Intended Course",
+              "displayName": "Intended Course",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Target Intake",
+              "displayName": "Target Intake",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI Status",
+              "displayName": "AI Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Readiness Score",
+              "displayName": "Readiness Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Assigned Counsellor",
+              "displayName": "Assigned Counsellor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Counsellor Email",
+              "displayName": "Counsellor Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Current Stage",
+              "displayName": "Current Stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Stage Number",
+              "displayName": "Stage Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Stage Updated At",
+              "displayName": "Stage Updated At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Drive Folder Link",
+              "displayName": "Drive Folder Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Drive Folder ID",
+              "displayName": "Drive Folder ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date Created",
+              "displayName": "Date Created",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [624, 112],
+      "id": "8c8c6365-a879-4993-b203-284f7bfdd665",
+      "name": "Append to Student Pipeline",
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets-Study-Abroad"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Generate Student ID').item.json.assigned_counsellor_email }}",
+        "subject": "={{ $('Generate Student ID').item.json['Full Name'] }} — {{ $json['Current Stage'] ?? 'New Inquiry' }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n  <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap\" rel=\"stylesheet\">\n  <style>\n    body { font-family: 'Inter'; background-color: #f4f6f9; margin: 0; padding: 24px; color: #111827; }\n    .container { max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }\n    .header { background: linear-gradient(135deg, #1a3c6e, #274f8a); padding: 32px; text-align: center; }\n    .header h1 { margin: 0; color: #ffffff; font-size: 26px; font-weight: 700; }\n    .header p { margin: 10px 0 0; color: #d7e4f7; font-size: 14px; }\n    .stage-banner { background: #f59e0b; color: #ffffff; text-align: center; padding: 14px; font-size: 15px; font-weight: 600; }\n    .section { padding: 28px 30px; border-bottom: 1px solid #eef2f7; }\n    .section:last-child { border-bottom: none; }\n    .section-title { margin: 0 0 18px; color: #1a3c6e; font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; }\n    .id-card { background: #f0f4ff; border: 1px solid #d8e3ff; border-radius: 12px; padding: 20px; text-align: center; }\n    .student-id { font-size: 30px; font-weight: 700; color: #1a3c6e; letter-spacing: 3px; }\n    .id-note { margin-top: 10px; font-size: 12px; color: #6b7280; }\n    .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }\n    .info-card { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; }\n    .info-label { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: #6b7280; margin-bottom: 6px; font-weight: 600; }\n    .info-value { font-size: 14px; color: #111827; font-weight: 500; line-height: 1.5; word-break: break-word; }\n    .status-pill { display: inline-block; background: #e8f4ff; color: #1a3c6e; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }\n    .score-card { background: #eef5ff; border: 1px solid #dbe7ff; }\n    .score-value { font-size: 24px; font-weight: 700; color: #1a3c6e; }\n    .folder-link { color: #1a3c6e; text-decoration: none; font-weight: 600; }\n    .folder-link:hover { text-decoration: underline; }\n    .action-box { background: #1a3c6e; color: #ffffff; border-radius: 12px; padding: 18px; line-height: 1.8; font-size: 14px; }\n    .footer { background: #f8fafc; text-align: center; padding: 24px; color: #6b7280; font-size: 12px; line-height: 1.7; }\n\n    @media only screen and (max-width: 600px) {\n      .info-grid { grid-template-columns: 1fr; }\n      .student-id { font-size: 24px; }\n    }\n  </style>\n</head>\n<body>\n\n<div class=\"container\">\n  <div class=\"header\">\n    <h1>📁 New Student Record Created</h1>\n    <p>A new student has been added to your pipeline</p>\n  </div>\n\n  <div class=\"stage-banner\"> 🟡 Current Stage: New Inquiry </div>\n\n  <div class=\"section\">\n    <h2 class=\"section-title\">🪪 Student ID</h2>\n    \n    <div class=\"id-card\">\n      <div class=\"student-id\">{{ $json.Student_ID }}</div>\n      <div class=\"id-note\">Save this ID. You will need it to update this student's stage later.</div>\n    </div>\n  </div>\n\n  <div class=\"section\">\n    <h2 class=\"section-title\">👤 Student Information</h2>\n    \n    <div class=\"info-grid\">\n\n      <div class=\"info-card\">\n        <div class=\"info-label\">Full Name</div>\n        <div class=\"info-value\">{{ $json['Full Name'] }}</div>\n      </div>\n\n      <div class=\"info-card\">\n        <div class=\"info-label\">WhatsApp Number</div>\n        <div class=\"info-value\">{{ $json['WhatsApp Number'] }}</div>\n      </div>\n\n      <div class=\"info-card\">\n        <div class=\"info-label\">Email Address</div>\n        <div class=\"info-value\">{{ $json['Email Address'] }}</div>\n      </div>\n\n      <div class=\"info-card\">\n        <div class=\"info-label\">Preferred Destination</div>\n        <div class=\"info-value\">{{ $json['Preferred Destination'] }}</div>\n      </div>\n\n      <div class=\"info-card\">\n        <div class=\"info-label\">Intended Course</div>\n        <div class=\"info-value\">{{ $json['Intended Course'] }}</div>\n      </div>\n\n      <div class=\"info-card\">\n        <div class=\"info-label\">Target Intake</div>\n        <div class=\"info-value\">{{ $json['Target Intake'] }}</div>\n      </div>\n\n      <div class=\"info-card\">\n        <div class=\"info-label\">Budget</div>\n        <div class=\"info-value\">{{ $json.Budget }}</div>\n      </div>\n\n      <div class=\"info-card\">\n        <div class=\"info-label\">AI Status</div>\n        <div class=\"info-value\"><span class=\"status-pill\">{{ $json['AI Status'] }}</span></div>\n      </div>\n\n      <div class=\"info-card score-card\">\n        <div class=\"info-label\">Readiness Score</div>\n        <div class=\"score-value\">{{ $json['Readiness Score'] }}/100</div>\n      </div>\n\n      <div class=\"info-card\">\n        <div class=\"info-label\">Date Created</div>\n        <div class=\"info-value\">{{ $json['Date Created'] }}</div>\n      </div>\n\n      <div class=\"info-card\" style=\"grid-column: 1 / -1;\">\n        <div class=\"info-label\">Student Folder</div>\n        <div class=\"info-value\">\n          <a href=\"{{ $json['Drive Folder Link'] }}\" class=\"folder-link\">📁 Open Student Folder</a>\n        </div>\n      </div>\n\n    </div>\n  </div>\n\n  <div class=\"section\">\n    <h2 class=\"section-title\">📌 Your Next Action</h2>\n    <div class=\"action-box\">\n      This student has just been assigned to you. Please reach out via WhatsApp within the next 2 hours to introduce yourself and schedule an initial counselling session.<br><br>Once the session is complete, update the student's stage using the Stage Update Form.\n    </div>\n  </div>\n\n  <div class=\"footer\">\n    This notification was automatically generated by your Study Abroad Pipeline.<br>Please do not reply to this email.\n  </div>\n</div>\n\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [832, 112],
+      "id": "3e691117-424c-4757-9429-7ae2050aa3f9",
+      "name": "Gmail: New Student Record Notification",
+      "webhookId": "YOUR_GMAIL_WEBHOOK_ID",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account-Study-Abroad"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "##\n**Application Tracking System - Create Student Record**",
+        "height": 112,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-16, -32],
+      "typeVersion": 1,
+      "id": "5dd0eab8-3d0e-46d7-bcf0-bb9f93d38953",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Generate Student ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Student ID": {
+      "main": [
+        [
+          {
+            "node": "Append to Student Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append to Student Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Gmail: New Student Record Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "YOUR_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "nodeGroups": [],
+  "id": "YOUR_WORKFLOW_ID",
+  "tags": []
+}
