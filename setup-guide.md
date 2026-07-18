@@ -58,77 +58,133 @@ to enrollment. When a prospective student submits the eligibility form, the syst
 
 
 [Eligibility Form]
+
 │
+
 ▼
+
 [Student Acknowledgment Email]
+
 │
+
 ▼
+
 [AI Evaluation — Groq API]
+
 │
+
 ▼
+
 [Parse & Score Lead]
+
 │
+
 ▼
+
 [Merge Form + AI Data]
+
 │
+
 ├──▶ [Log Lead → Google Sheets: Leads_Master]
-│ │
+
+│
+
 │ ▼
+
 │ [Create Google Drive Folder]
-│ │
+
 │ ▼
+
 │ [Get Counsellors from Sheet]
-│ │
+
 │ ▼
+
 │ [Assign Next Counsellor (Round-Robin)]
-│ │
-│ ┌──────┴────────────────────────────┐
-│ ▼ ▼
+
+│ ▼ 
+
 │ [Assignment Email → Student] [Evaluation Report → Counsellor]
-│ │
+
 │ ▼
+
 │ [Update Last Assigned]
-│ │
+
+
 │ ▼
 └──────────────────────────▶ [Webhook → Create Student Record]
+
 │
+
 ▼
+
 [Generate Student ID]
+
 │
+
 ▼
+
 [Append → Student Pipeline Sheet]
+
 │
+
 ▼
+
 [New Record Email → Counsellor]
 
 [Stage Update Form]
+
 │
+
 ├──▶ [Find Student Record in Sheet]
+
 │
+
 ▼
+
 [Merge Form + Sheet Data]
+
 │
+
 ▼
+
 [Validate Student Record]
+
 │
+
 ▼
+
 [Update Student Stage in Sheet]
+
 │
+
 ▼
+
 [Stage Email → Student]
+
 │
+
 ▼
+
 [Stage Update Notification → Team]
 
 [Schedule: Every Monday 8AM WAT]
+
 │
+
 ▼
+
 [Read All Student Records]
+
 │
+
 ▼
+
 [Group Students by Stage]
+
 │
+
 ▼
+
 [Weekly Pipeline Report Email → Team]
 
 
