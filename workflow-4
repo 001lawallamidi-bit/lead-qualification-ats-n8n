@@ -1,0 +1,135 @@
+{
+  "name": "Application Tracking System - Weekly Pipeline Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [1],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [-320, -16],
+      "id": "bb6385cb-2e7e-4fa6-ae7a-2320e452f3e9",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "Copy of StudyAbroad CRM",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_STUDENT_PIPELINE_SHEET_GID",
+          "mode": "list",
+          "cachedResultName": "Student Pipeline",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit#gid=YOUR_STUDENT_PIPELINE_SHEET_GID"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [-112, -16],
+      "id": "ef6b161e-f574-4da9-ae8e-8443de27f39c",
+      "name": "Read All Student Records",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const students = $input.all().map(i => i.json);\n\nconst stages = [\n  'New Inquiry',\n  'Qualified Lead',\n  'Counselling Completed',\n  'Application Started',\n  'Documents Submitted',\n  'University Submission',\n  'Offer Letter Received',\n  'Acceptance & Deposit Paid',\n  'CAS/I-20/CoE Issued',\n  'Pre-Visa Documentation',\n  'Visa Processing',\n  'Visa Approved',\n  'Pre-Departure Briefing',\n  'Enrolled/Arrived',\n  'Visa Refused',\n  'Reapplication in Progress',\n  'Deferred',\n  'Withdrawn'\n];\n\nconst grouped = {};\nstages.forEach(stage => {\n  grouped[stage] = students.filter(s =>\n    String(s['Current Stage'] ?? '').trim() === stage\n  );\n});\n\n// Active = everyone except terminal/closed stages\nconst closedStages = ['Visa Approved', 'Enrolled/Arrived', 'Withdrawn'];\n\nconst totalActive = students.filter(s =>\n  !closedStages.includes(String(s['Current Stage'] ?? '').trim())\n).length;\n\nconst totalStudents      = students.length;\nconst totalApproved      = grouped['Visa Approved'].length;\nconst totalProcessing    = grouped['Visa Processing'].length;\nconst totalNew           = grouped['New Inquiry'].length;\nconst totalEnrolled      = grouped['Enrolled/Arrived'].length;\nconst totalPreDeparture  = grouped['Pre-Departure Briefing'].length;\nconst totalPreVisa       = grouped['Pre-Visa Documentation'].length;\nconst totalCASIssued     = grouped['CAS/I-20/CoE Issued'].length;\nconst totalDeposit       = grouped['Acceptance & Deposit Paid'].length;\nconst totalRefused       = grouped['Visa Refused'].length;\nconst totalReapplying    = grouped['Reapplication in Progress'].length;\nconst totalDeferred      = grouped['Deferred'].length;\nconst totalWithdrawn     = grouped['Withdrawn'].length;\nconst totalQualified     = grouped['Qualified Lead'].length;\nconst totalCounselled    = grouped['Counselling Completed'].length;\nconst totalAppStarted    = grouped['Application Started'].length;\nconst totalDocSubmitted  = grouped['Documents Submitted'].length;\nconst totalUniSubmitted  = grouped['University Submission'].length;\nconst totalOfferReceived = grouped['Offer Letter Received'].length;\n\nreturn [\n  {\n    json: {\n      total_students:       totalStudents,\n      total_active:         totalActive,\n      total_new:            totalNew,\n      total_qualified:      totalQualified,\n      total_counselled:     totalCounselled,\n      total_app_started:    totalAppStarted,\n      total_doc_submitted:  totalDocSubmitted,\n      total_uni_submitted:  totalUniSubmitted,\n      total_offer_received: totalOfferReceived,\n      total_deposit_paid:   totalDeposit,\n      total_cas_issued:     totalCASIssued,\n      total_pre_visa:       totalPreVisa,\n      total_processing:     totalProcessing,\n      total_approved:       totalApproved,\n      total_pre_departure:  totalPreDeparture,\n      total_enrolled:       totalEnrolled,\n      total_refused:        totalRefused,\n      total_reapplying:     totalReapplying,\n      total_deferred:       totalDeferred,\n      total_withdrawn:      totalWithdrawn,\n      grouped,\n      report_date: new Date().toLocaleString('en-GB', {\n        timeZone: 'Africa/Lagos',\n        day: '2-digit',\n        month: 'long',\n        year: 'numeric'\n      })\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [96, -16],
+      "id": "0a76f452-e808-4ad5-bd0e-125942f9ad7d",
+      "name": "Group Students by Stage"
+    },
+    {
+      "parameters": {
+        "sendTo": "YOUR_REPORT_RECIPIENT_EMAIL",
+        "subject": "=📊 Weekly Pipeline Report — {{ $json.report_date }}",
+        "message": "=<!DOCTYPE html> <html> <head>   <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap\" rel=\"stylesheet\">   <style>     body { font-family: 'Inter', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 24px; color: #111827; }     .container { max-width: 700px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }     .header { background: linear-gradient(135deg, #1a3c6e, #274f8a); padding: 32px; text-align: center; }     .header h1 { margin: 0; color: #ffffff; font-size: 24px; font-weight: 700; }     .header p { margin: 10px 0 0; color: #d7e4f7; font-size: 14px; }     .stats-section { background: #f0f4ff; padding: 24px 30px; border-bottom: 1px solid #dbe7ff; }     .stats-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }     .stats-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }     .stat-card { background: #ffffff; border-radius: 12px; padding: 16px; text-align: center; border: 1px solid #dbe7ff; }     .stat-card.warning { border-color: #fcd34d; background: #fffbeb; }     .stat-card.danger { border-color: #fca5a5; background: #fff5f5; }     .stat-card.success { border-color: #6ee7b7; background: #f0fff4; }     .stat-number { font-size: 28px; font-weight: 700; color: #1a3c6e; }     .stat-number.warning { color: #d97706; }     .stat-number.danger { color: #dc2626; }     .stat-number.success { color: #059669; }     .stat-label { font-size: 11px; color: #6b7280; margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }     .stats-divider { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 10px; }     .section { padding: 20px 30px; border-bottom: 1px solid #eef2f7; }     .section-title { margin: 0 0 14px; color: #1a3c6e; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; }     .stage-block { margin-bottom: 16px; border-radius: 10px; overflow: hidden; border: 1px solid #eef2f7; }     .stage-block.warning { border-color: #fcd34d; }     .stage-block.danger { border-color: #fca5a5; }     .stage-block.success { border-color: #6ee7b7; }     .stage-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #eef2f7; }     .stage-header.warning { background: #fffbeb; border-bottom-color: #fcd34d; }     .stage-header.danger { background: #fff5f5; border-bottom-color: #fca5a5; }     .stage-header.success { background: #f0fff4; border-bottom-color: #6ee7b7; }     .stage-name { font-size: 14px; font-weight: 700; color: #111827; }     .stage-count { font-size: 12px; background: #1a3c6e; color: #ffffff; padding: 3px 10px; border-radius: 999px; font-weight: 600; }     .stage-count-zero { background: #e5e7eb; color: #6b7280; }     .stage-count-warning { background: #d97706; }     .stage-count-danger { background: #dc2626; }     .stage-count-success { background: #059669; }     .student-table { width: 100%; border-collapse: collapse; }     .student-table td { padding: 9px 16px; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6; }     .student-table td:first-child { font-weight: 600; color: #111827; }     .student-table tr:last-child td { border-bottom: none; }     .no-students { padding: 12px 16px; font-size: 13px; color: #9ca3af; font-style: italic; }     .section-group-label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #eef2f7; }     .footer { background: #f8fafc; text-align: center; padding: 24px; color: #9ca3af; font-size: 12px; line-height: 1.7; }   </style> </head> <body> <div class=\"container\">    <div class=\"header\">     <h1>📊 Weekly Pipeline Report</h1>     <p>{{ $json.report_date }} — Study Abroad Agency</p>   </div>    <!-- ── STATS SECTION ── -->   <div class=\"stats-section\">      <!-- Row 1: Top-level summary -->     <div class=\"stats-grid-4\">       <div class=\"stat-card\">         <div class=\"stat-number\">{{ $json.total_students }}</div>         <div class=\"stat-label\">Total Students</div>       </div>       <div class=\"stat-card\">         <div class=\"stat-number\">{{ $json.total_active }}</div>         <div class=\"stat-label\">Active</div>       </div>       <div class=\"stat-card success\">         <div class=\"stat-number success\">{{ $json.total_approved }}</div>         <div class=\"stat-label\">Visa Approved</div>       </div>       <div class=\"stat-card success\">         <div class=\"stat-number success\">{{ $json.total_enrolled }}</div>         <div class=\"stat-label\">Enrolled/Arrived</div>       </div>     </div>      <!-- Row 2: Mid-pipeline -->     <div class=\"stats-grid-4\">       <div class=\"stat-card\">         <div class=\"stat-number\">{{ $json.total_new }}</div>         <div class=\"stat-label\">New Inquiries</div>       </div>       <div class=\"stat-card\">         <div class=\"stat-number\">{{ $json.total_offer_received }}</div>         <div class=\"stat-label\">Offer Received</div>       </div>       <div class=\"stat-card\">         <div class=\"stat-number\">{{ $json.total_pre_visa }}</div>         <div class=\"stat-label\">Pre-Visa Docs</div>       </div>       <div class=\"stat-card\">         <div class=\"stat-number\">{{ $json.total_processing }}</div>         <div class=\"stat-label\">Visa Processing</div>       </div>     </div>      <!-- Row 3: Exception stages -->     <div class=\"stats-grid-3\">       <div class=\"stat-card danger\">         <div class=\"stat-number danger\">{{ $json.total_refused }}</div>         <div class=\"stat-label\">Visa Refused</div>       </div>       <div class=\"stat-card warning\">         <div class=\"stat-number warning\">{{ $json.total_deferred }}</div>         <div class=\"stat-label\">Deferred</div>       </div>       <div class=\"stat-card warning\">         <div class=\"stat-number warning\">{{ $json.total_withdrawn }}</div>         <div class=\"stat-label\">Withdrawn</div>       </div>     </div>    </div>    <!-- ── PIPELINE BREAKDOWN ── -->   <div class=\"section\">     <h2 class=\"section-title\">📋 Pipeline Breakdown by Stage</h2>      <!-- GROUP: INQUIRY & QUALIFICATION -->     <div class=\"section-group-label\">Inquiry & Qualification</div>      <div class=\"stage-block\">       <div class=\"stage-header\">         <span class=\"stage-name\">🟡 New Inquiry</span>         <span class=\"stage-count {{ $json.grouped['New Inquiry'].length === 0 ? 'stage-count-zero' : '' }}\">{{ $json.grouped['New Inquiry'].length }}</span>       </div>       {{ $json.grouped['New Inquiry'].length > 0 ? `<table class=\"student-table\">${$json.grouped['New Inquiry'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <div class=\"stage-block\">       <div class=\"stage-header\">         <span class=\"stage-name\">✅ Qualified Lead</span>         <span class=\"stage-count {{ $json.grouped['Qualified Lead'].length === 0 ? 'stage-count-zero' : '' }}\">{{ $json.grouped['Qualified Lead'].length }}</span>       </div>       {{ $json.grouped['Qualified Lead'].length > 0 ? `<table class=\"student-table\">${$json.grouped['Qualified Lead'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <div class=\"stage-block\">       <div class=\"stage-header\">         <span class=\"stage-name\">📋 Counselling Completed</span>         <span class=\"stage-count {{ $json.grouped['Counselling Completed'].length === 0 ? 'stage-count-zero' : '' }}\">{{ $json.grouped['Counselling Completed'].length }}</span>       </div>       {{ $json.grouped['Counselling Completed'].length > 0 ? `<table class=\"student-table\">${$json.grouped['Counselling Completed'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <!-- GROUP: APPLICATION -->     <div class=\"section-group-label\">Application</div>      <div class=\"stage-block\">       <div class=\"stage-header\">         <span class=\"stage-name\">🎓 Application Started</span>         <span class=\"stage-count {{ $json.grouped['Application Started'].length === 0 ? 'stage-count-zero' : '' }}\">{{ $json.grouped['Application Started'].length }}</span>       </div>       {{ $json.grouped['Application Started'].length > 0 ? `<table class=\"student-table\">${$json.grouped['Application Started'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <div class=\"stage-block\">       <div class=\"stage-header\">         <span class=\"stage-name\">📄 Documents Submitted</span>         <span class=\"stage-count {{ $json.grouped['Documents Submitted'].length === 0 ? 'stage-count-zero' : '' }}\">{{ $json.grouped['Documents Submitted'].length }}</span>       </div>       {{ $json.grouped['Documents Submitted'].length > 0 ? `<table class=\"student-table\">${$json.grouped['Documents Submitted'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <div class=\"stage-block\">       <div class=\"stage-header\">         <span class=\"stage-name\">🏫 University Submission</span>         <span class=\"stage-count {{ $json.grouped['University Submission'].length === 0 ? 'stage-count-zero' : '' }}\">{{ $json.grouped['University Submission'].length }}</span>       </div>       {{ $json.grouped['University Submission'].length > 0 ? `<table class=\"student-table\">${$json.grouped['University Submission'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <!-- GROUP: OFFER & ENROLLMENT -->     <div class=\"section-group-label\">Offer & Enrollment</div>      <div class=\"stage-block\">       <div class=\"stage-header\">         <span class=\"stage-name\">💌 Offer Letter Received</span>         <span class=\"stage-count {{ $json.grouped['Offer Letter Received'].length === 0 ? 'stage-count-zero' : '' }}\">{{ $json.grouped['Offer Letter Received'].length }}</span>       </div>       {{ $json.grouped['Offer Letter Received'].length > 0 ? `<table class=\"student-table\">${$json.grouped['Offer Letter Received'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <div class=\"stage-block\">       <div class=\"stage-header\">         <span class=\"stage-name\">💳 Acceptance & Deposit Paid</span>         <span class=\"stage-count {{ $json.grouped['Acceptance & Deposit Paid'].length === 0 ? 'stage-count-zero' : '' }}\">{{ $json.grouped['Acceptance & Deposit Paid'].length }}</span>       </div>       {{ $json.grouped['Acceptance & Deposit Paid'].length > 0 ? `<table class=\"student-table\">${$json.grouped['Acceptance & Deposit Paid'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <div class=\"stage-block\">       <div class=\"stage-header\">         <span class=\"stage-name\">📑 CAS/I-20/CoE Issued</span>         <span class=\"stage-count {{ $json.grouped['CAS/I-20/CoE Issued'].length === 0 ? 'stage-count-zero' : '' }}\">{{ $json.grouped['CAS/I-20/CoE Issued'].length }}</span>       </div>       {{ $json.grouped['CAS/I-20/CoE Issued'].length > 0 ? `<table class=\"student-table\">${$json.grouped['CAS/I-20/CoE Issued'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <!-- GROUP: VISA -->     <div class=\"section-group-label\">Visa</div>      <div class=\"stage-block\">       <div class=\"stage-header\">         <span class=\"stage-name\">📁 Pre-Visa Documentation</span>         <span class=\"stage-count {{ $json.grouped['Pre-Visa Documentation'].length === 0 ? 'stage-count-zero' : '' }}\">{{ $json.grouped['Pre-Visa Documentation'].length }}</span>       </div>       {{ $json.grouped['Pre-Visa Documentation'].length > 0 ? `<table class=\"student-table\">${$json.grouped['Pre-Visa Documentation'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <div class=\"stage-block\">       <div class=\"stage-header\">         <span class=\"stage-name\">🛂 Visa Processing</span>         <span class=\"stage-count {{ $json.grouped['Visa Processing'].length === 0 ? 'stage-count-zero' : '' }}\">{{ $json.grouped['Visa Processing'].length }}</span>       </div>       {{ $json.grouped['Visa Processing'].length > 0 ? `<table class=\"student-table\">${$json.grouped['Visa Processing'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <div class=\"stage-block success\">       <div class=\"stage-header success\">         <span class=\"stage-name\">🎊 Visa Approved</span>         <span class=\"stage-count {{ $json.grouped['Visa Approved'].length === 0 ? 'stage-count-zero' : 'stage-count-success' }}\">{{ $json.grouped['Visa Approved'].length }}</span>       </div>       {{ $json.grouped['Visa Approved'].length > 0 ? `<table class=\"student-table\">${$json.grouped['Visa Approved'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <!-- GROUP: POST VISA -->     <div class=\"section-group-label\">Post Visa</div>      <div class=\"stage-block success\">       <div class=\"stage-header success\">         <span class=\"stage-name\">✈️ Pre-Departure Briefing</span>         <span class=\"stage-count {{ $json.grouped['Pre-Departure Briefing'].length === 0 ? 'stage-count-zero' : 'stage-count-success' }}\">{{ $json.grouped['Pre-Departure Briefing'].length }}</span>       </div>       {{ $json.grouped['Pre-Departure Briefing'].length > 0 ? `<table class=\"student-table\">${$json.grouped['Pre-Departure Briefing'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <div class=\"stage-block success\">       <div class=\"stage-header success\">         <span class=\"stage-name\">🎓 Enrolled/Arrived</span>         <span class=\"stage-count {{ $json.grouped['Enrolled/Arrived'].length === 0 ? 'stage-count-zero' : 'stage-count-success' }}\">{{ $json.grouped['Enrolled/Arrived'].length }}</span>       </div>       {{ $json.grouped['Enrolled/Arrived'].length > 0 ? `<table class=\"student-table\">${$json.grouped['Enrolled/Arrived'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <!-- GROUP: EXCEPTIONS -->     <div class=\"section-group-label\">Exceptions & Special Cases</div>      <div class=\"stage-block danger\">       <div class=\"stage-header danger\">         <span class=\"stage-name\">❌ Visa Refused</span>         <span class=\"stage-count {{ $json.grouped['Visa Refused'].length === 0 ? 'stage-count-zero' : 'stage-count-danger' }}\">{{ $json.grouped['Visa Refused'].length }}</span>       </div>       {{ $json.grouped['Visa Refused'].length > 0 ? `<table class=\"student-table\">${$json.grouped['Visa Refused'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <div class=\"stage-block warning\">       <div class=\"stage-header warning\">         <span class=\"stage-name\">🔄 Reapplication in Progress</span>         <span class=\"stage-count {{ $json.grouped['Reapplication in Progress'].length === 0 ? 'stage-count-zero' : 'stage-count-warning' }}\">{{ $json.grouped['Reapplication in Progress'].length }}</span>       </div>       {{ $json.grouped['Reapplication in Progress'].length > 0 ? `<table class=\"student-table\">${$json.grouped['Reapplication in Progress'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <div class=\"stage-block warning\">       <div class=\"stage-header warning\">         <span class=\"stage-name\">📅 Deferred</span>         <span class=\"stage-count {{ $json.grouped['Deferred'].length === 0 ? 'stage-count-zero' : 'stage-count-warning' }}\">{{ $json.grouped['Deferred'].length }}</span>       </div>       {{ $json.grouped['Deferred'].length > 0 ? `<table class=\"student-table\">${$json.grouped['Deferred'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>      <div class=\"stage-block warning\">       <div class=\"stage-header warning\">         <span class=\"stage-name\">🚫 Withdrawn</span>         <span class=\"stage-count {{ $json.grouped['Withdrawn'].length === 0 ? 'stage-count-zero' : 'stage-count-warning' }}\">{{ $json.grouped['Withdrawn'].length }}</span>       </div>       {{ $json.grouped['Withdrawn'].length > 0 ? `<table class=\"student-table\">${$json.grouped['Withdrawn'].map(s => `<tr><td>${s['Full Name']}</td><td>${s['Preferred Destination']}</td><td>${s['Assigned Counsellor']}</td></tr>`).join('')}</table>` : '<div class=\"no-students\">No students at this stage</div>' }}     </div>    </div>    <div class=\"footer\">     This report is automatically generated every Monday at 8:00 AM WAT.<br>     Study Abroad Agency — Internal Pipeline Report   </div>  </div> </body> </html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [304, -16],
+      "id": "a5deb9a0-5cde-4faa-b371-a78f5fb7fd62",
+      "name": "Weekly Pipeline Report",
+      "webhookId": "YOUR_WEEKLY_REPORT_WEBHOOK_ID",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read All Student Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read All Student Records": {
+      "main": [
+        [
+          {
+            "node": "Group Students by Stage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group Students by Stage": {
+      "main": [
+        [
+          {
+            "node": "Weekly Pipeline Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "YOUR_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "id": "YOUR_WORKFLOW_ID",
+  "tags": []
+}
