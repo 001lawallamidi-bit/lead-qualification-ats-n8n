@@ -1,0 +1,568 @@
+{
+  "name": "Application Tracking System - Stage Update",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Student Stage Update",
+        "formDescription": "Use this form to update a student's current application stage.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Student ID",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "New Stage",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  { "option": "New Inquiry" },
+                  { "option": "Qualified Lead" },
+                  { "option": "Counselling Completed" },
+                  { "option": "Application Started" },
+                  { "option": "Documents Submitted" },
+                  { "option": "University Submission" },
+                  { "option": "Offer Letter Received" },
+                  { "option": "Acceptance & Deposit Paid" },
+                  { "option": "CAS/I-20/CoE Issued" },
+                  { "option": "Pre-Visa Documentation" },
+                  { "option": "Visa Processing" },
+                  { "option": "Visa Approved" },
+                  { "option": "Pre-Departure Briefing" },
+                  { "option": "Enrolled/Arrived" },
+                  { "option": "Visa Refused" },
+                  { "option": "Reapplication in Progress" },
+                  { "option": "Deferred" },
+                  { "option": "Withdrawn" }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Counsellor Name",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  { "option": "Counsellor A" },
+                  { "option": "Counsellor B" },
+                  { "option": "Counsellor C" }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Notes",
+              "fieldType": "textarea"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [0, 0],
+      "id": "0e29ee46-70cb-4c38-8669-7311c1a82b19",
+      "name": "Stage Update Form",
+      "webhookId": "YOUR_STAGE_UPDATE_FORM_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "Copy of StudyAbroad CRM",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_STUDENT_PIPELINE_SHEET_GID",
+          "mode": "list",
+          "cachedResultName": "Student Pipeline",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit#gid=YOUR_STUDENT_PIPELINE_SHEET_GID"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Student_ID",
+              "lookupValue": "={{ $json['Student ID'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [352, 0],
+      "id": "4cbbdf3a-f896-41f4-b672-94f11bf15353",
+      "name": "Find Student Record",
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allItems = $input.all();\n\nif (!allItems || allItems.length === 0) {\n  throw new Error('No data received. Please check your node connections.');\n}\n\nconst data = allItems[0].json;\n\n// Form fields coming from Form Trigger via Merge\nconst newStage = data['New Stage'] ?? data['new_stage'] ?? '';\nconst counsellorName = data['Counsellor Name'] ?? data['counsellor_name'] ?? '';\nconst notes = data['Notes'] ?? data['notes'] ?? '';\nconst submittedStudentId = data['Student ID'] ?? data['student_id'] ?? '';\n\n// Sheet fields coming from Find Student Record via Merge\nconst studentId = data['Student_ID'] ?? submittedStudentId;\nconst fullName = data['Full Name'] ?? '';\n\n// Validate student was found\nif (!studentId && !fullName) {\n  throw new Error(\n    `Student ID \"${submittedStudentId}\" was not found in the Student Pipeline. Please check the ID and try again.`\n  );\n}\n\n// Validate new stage was provided\nif (!newStage) {\n  throw new Error('New Stage is missing. Please ensure the form was filled correctly.');\n}\n\nconst stageMap = {\n  'New Inquiry': 1,\n  'Qualified Lead': 2,\n  'Counselling Completed': 3,\n  'Application Started': 4,\n  'Documents Submitted': 5,\n  'University Submission': 6,\n  'Offer Letter Received': 7,\n  'Acceptance & Deposit Paid': 8,\n  'CAS/I-20/CoE Issued': 9,\n  'Pre-Visa Documentation': 10,\n  'Visa Processing': 11,\n  'Visa Approved': 12,\n  'Pre-Departure Briefing': 13,\n  'Enrolled/Arrived': 14,\n  'Visa Refused': 15,\n  'Reapplication in Progress': 16,\n  'Deferred': 17,\n  'Withdrawn': 18\n};\n\nconst stageNumber = stageMap[newStage] ?? 1;\n\nconst now = new Date().toLocaleString('en-GB', {\n  timeZone: 'Africa/Lagos',\n  day: '2-digit',\n  month: 'long',\n  year: 'numeric',\n  hour: '2-digit',\n  minute: '2-digit',\n  second: '2-digit',\n  hour12: false\n});\n\nreturn [\n  {\n    json: {\n      student_id: studentId,\n      full_name: fullName,\n      whatsapp_number: data['WhatsApp Number'] ?? '',\n      student_email: data['Email'] ?? data['Email Address'] ?? '',\n      preferred_destination: data['Preferred Destination'] ?? '',\n      intended_course: data['Intended Course'] ?? '',\n      target_intake: data['Target Intake'] ?? '',\n      assigned_counsellor: data['Assigned Counsellor'] ?? '',\n      counsellor_email: data['Counsellor Email'] ?? '',\n      folder_link: data['Drive Folder Link'] ?? '',\n      previous_stage: data['Current Stage'] ?? '',\n      new_stage: newStage,\n      stage_number: stageNumber,\n      stage_updated_at: now,\n      counsellor_name: counsellorName,\n      notes: notes\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [784, 0],
+      "id": "fdb22724-1f55-4135-ab14-e137634d70a8",
+      "name": "Validate Student Record"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Find Student Record').item.json['Email Address'] }}",
+        "subject": "={{ \n  $json.new_stage === 'Qualified Lead' ? '✅ Great News — You Have Been Qualified' :\n  $json.new_stage === 'Counselling Completed' ? '📋 Your Counselling Session is Complete — Next Steps Inside' :\n  $json.new_stage === 'Application Started' ? '🎓 Your Application Has Been Started' :\n  $json.new_stage === 'Documents Submitted' ? '✅ Your Documents Have Been Received' :\n  $json.new_stage === 'University Submission' ? '🏫 Your Application Has Been Submitted to the University' :\n  $json.new_stage === 'Offer Letter Received' ? '🎉 Congratulations — You Have Received an Offer Letter!' :\n  $json.new_stage === 'Acceptance & Deposit Paid' ? '✅ Your Acceptance & Deposit Has Been Confirmed' :\n  $json.new_stage === 'CAS/I-20/CoE Issued' ? '📄 Your Enrollment Document Has Been Issued' :\n  $json.new_stage === 'Pre-Visa Documentation' ? '📋 Time to Prepare Your Visa Documents' :\n  $json.new_stage === 'Visa Processing' ? '🛂 Your Visa Application Is Now Being Processed' :\n  $json.new_stage === 'Visa Approved' ? '🎊 Your Visa Has Been Approved!' :\n  $json.new_stage === 'Pre-Departure Briefing' ? '✈️ Your Pre-Departure Briefing — Almost There!' :\n  $json.new_stage === 'Enrolled/Arrived' ? '🎓 Welcome — You Have Successfully Arrived!' :\n  $json.new_stage === 'Visa Refused' ? '📋 Important Update on Your Visa Application' :\n  $json.new_stage === 'Reapplication in Progress' ? '🔄 Your Reapplication Is Now in Progress' :\n  $json.new_stage === 'Deferred' ? '📅 Your Application Has Been Deferred' :\n  $json.new_stage === 'Withdrawn' ? '📋 Update on Your Application Status' :\n  '📋 Update on Your Study Abroad Application'\n}}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n  <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap\" rel=\"stylesheet\">\n  <style>\n    body { font-family: 'Inter', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 24px; color: #111827; }\n    .container { max-width: 680px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }\n    .header { background: linear-gradient(135deg, #1a3c6e, #274f8a); padding: 32px; text-align: center; }\n    .header h1 { margin: 0; color: #ffffff; font-size: 24px; font-weight: 700; }\n    .header p { margin: 10px 0 0; color: #d7e4f7; font-size: 14px; }\n    .stage-banner { background: #1a3c6e; color: #ffffff; text-align: center; padding: 14px; font-size: 15px; font-weight: 600; }\n    .body-content { padding: 32px 30px; font-size: 15px; color: #374151; line-height: 1.8; }\n    .highlight { background: #f0f4ff; border-left: 4px solid #1a3c6e; border-radius: 8px; padding: 16px 20px; margin: 20px 0; }\n    .highlight table { width: 100%; border-collapse: collapse; }\n    .highlight td { padding: 6px 0; font-size: 14px; color: #374151; vertical-align: top; }\n    .highlight td:first-child { font-weight: 600; color: #1a3c6e; width: 45%; }\n    .steps { background: #f8fafc; border-radius: 8px; padding: 16px 20px; margin: 20px 0; }\n    .steps ol { margin: 0; padding-left: 20px; }\n    .steps ol li { margin-bottom: 8px; font-size: 14px; color: #374151; }\n    .congrats-box { background: #f0fff4; border: 2px solid #28a745; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0; }\n    .congrats-box p { font-size: 18px; font-weight: 700; color: #28a745; margin: 0; }\n    .tips { background: #fff8e1; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 16px 20px; margin: 20px 0; }\n    .tips ul { margin: 0; padding-left: 20px; }\n    .tips ul li { margin-bottom: 8px; font-size: 14px; color: #374151; }\n    .checklist { background: #f0f4ff; border-left: 4px solid #1a3c6e; border-radius: 8px; padding: 16px 20px; margin: 20px 0; }\n    .checklist ul { margin: 0; padding-left: 20px; }\n    .checklist ul li { margin-bottom: 8px; font-size: 14px; color: #374151; }\n    .footer { background: #f8fafc; text-align: center; padding: 24px; color: #9ca3af; font-size: 12px; line-height: 1.7; border-top: 1px solid #eef2f7; }\n  </style>\n</head>\n<body>\n<div class=\"container\">\n\n  <div class=\"header\">\n    <h1>\n      {{ $json.new_stage === 'Qualified Lead' ? '✅ You Have Been Qualified' :\n         $json.new_stage === 'Counselling Completed' ? '📋 Counselling Complete' :\n         $json.new_stage === 'Application Started' ? '🎓 Application Started' :\n         $json.new_stage === 'Documents Submitted' ? '✅ Documents Received' :\n         $json.new_stage === 'University Submission' ? '🏫 Application Submitted' :\n         $json.new_stage === 'Offer Letter Received' ? '🎉 Offer Letter Received!' :\n         $json.new_stage === 'Acceptance & Deposit Paid' ? '✅ Acceptance Confirmed' :\n         $json.new_stage === 'CAS/I-20/CoE Issued' ? '📄 Enrollment Document Issued' :\n         $json.new_stage === 'Pre-Visa Documentation' ? '📋 Visa Documents Preparation' :\n         $json.new_stage === 'Visa Processing' ? '🛂 Visa Application In Progress' :\n         $json.new_stage === 'Visa Approved' ? '🎊 Visa Approved!' :\n         $json.new_stage === 'Pre-Departure Briefing' ? '✈️ Pre-Departure Briefing' :\n         $json.new_stage === 'Enrolled/Arrived' ? '🎓 Successfully Arrived!' :\n         $json.new_stage === 'Visa Refused' ? '📋 Visa Application Update' :\n         $json.new_stage === 'Reapplication in Progress' ? '🔄 Reapplication Started' :\n         $json.new_stage === 'Deferred' ? '📅 Application Deferred' :\n         $json.new_stage === 'Withdrawn' ? '📋 Application Status Update' :\n         '📋 Application Update' }}\n    </h1>\n    <p>Your study abroad journey continues</p>\n  </div>\n\n  <div class=\"stage-banner\">\n    Current Stage: {{ $('Stage Update Form').item.json['New Stage'] }}\n  </div>\n\n  <div class=\"body-content\">\n\n    <p>Hi {{ $('Find Student Record').item.json['Full Name'] }},</p>\n\n    {{ $json.new_stage === 'Qualified Lead' ? '<p>Exciting news! Based on your profile, our team has confirmed that you meet the initial requirements for your intended program. Your counsellor will be scheduling a full session with you soon to walk you through your options and next steps.</p>' :\n       $json.new_stage === 'Counselling Completed' ? '<p>Your counselling session has been completed. We hope you found it helpful and that you now have a clearer picture of your study abroad journey. Your counsellor will begin identifying suitable universities for your profile.</p>' :\n       $json.new_stage === 'Application Started' ? '<p>Your application has officially been started. Your counsellor will be in touch shortly regarding the documents you need to provide. Please ensure you are ready with your passport, transcripts, and bank statements.</p>' :\n       $json.new_stage === 'Documents Submitted' ? '<p>We have received and reviewed your submitted documents. Our team is now preparing your application package for submission to your chosen university. We will notify you once it has been submitted.</p>' :\n       $json.new_stage === 'University Submission' ? '<p>Your application has been officially submitted to your chosen university. Universities typically take between 2 to 8 weeks to process applications. We will monitor closely and notify you the moment we receive a response.</p>' :\n       $json.new_stage === 'Offer Letter Received' ? '<p>Congratulations! You have received an offer letter from your chosen university. This is a huge milestone. Your counsellor will be in touch very shortly to guide you through accepting your offer and beginning your visa application.</p>' :\n       $json.new_stage === 'Acceptance & Deposit Paid' ? '<p>Your acceptance has been confirmed and your deposit payment has been received by the university. This is a significant step forward. Your counsellor will now work with you to obtain your official enrollment document required for your visa application.</p>' :\n       $json.new_stage === 'CAS/I-20/CoE Issued' ? '<p>Great news! Your official enrollment confirmation document has been issued by your university. This is a critical document required for your visa application. Please ensure all details on the document match your passport exactly and inform your counsellor immediately if you notice any discrepancy.</p>' :\n       $json.new_stage === 'Pre-Visa Documentation' ? '<p>Your application has reached the visa preparation stage. Your counsellor will guide you through assembling all required documents for your visa application. Please follow all instructions carefully and respond promptly to any requests. This stage is critical and requires your full attention and cooperation.</p>' :\n       $json.new_stage === 'Visa Processing' ? '<p>Your visa application is now being processed. This is the final major step before you are cleared to travel. Please stay responsive and avoid making non-refundable travel arrangements until your visa is approved.</p>' :\n       $json.new_stage === 'Visa Approved' ? '<p>Your visa has been approved! This is the moment you have been working towards. The entire team is so proud of what you have achieved. Please find your pre-departure checklist below.</p>' :\n       $json.new_stage === 'Pre-Departure Briefing' ? '<p>Congratulations on your visa approval! You are now in the final preparation stage before your journey begins. Your counsellor will be scheduling a pre-departure briefing session with you to ensure you are fully prepared for arrival, immigration, and your first days in your new country.</p>' :\n       $json.new_stage === 'Enrolled/Arrived' ? '<p>Welcome and congratulations! You have successfully arrived and begun your academic journey. We are incredibly proud of everything you have accomplished to get here. Please do not hesitate to reach out if you need any support as you settle in.</p>' :\n       $json.new_stage === 'Visa Refused' ? '<p>We understand this is disappointing news. Please know that a visa refusal is not the end of your study abroad journey. Our team will carefully review the reasons for the refusal and work with you to determine the best path forward, whether that is a reapplication or exploring alternative options.</p>' :\n       $json.new_stage === 'Reapplication in Progress' ? '<p>Your reapplication is now actively in progress. Our team has carefully reviewed the previous outcome and is working to strengthen your application. Please continue to provide any documents or information requested promptly. We remain committed to your success.</p>' :\n       $json.new_stage === 'Deferred' ? '<p>Your application has been deferred to a future intake. This is a common occurrence and does not affect the strength of your application. Your counsellor will be in touch to confirm your new target intake date and outline the next steps.</p>' :\n       $json.new_stage === 'Withdrawn' ? '<p>Your application has been marked as withdrawn. If you believe this is an error or if your circumstances have changed and you wish to continue, please reach out to your counsellor at your earliest convenience. We are always here to support you.</p>' :\n       '<p>There has been an update to your application. Please check in with your counsellor for the latest information.</p>' }}\n\n    <div class=\"highlight\">\n      <table>\n        <tr><td>Reference ID</td><td>{{ $('Find Student Record').item.json.Student_ID }}</td></tr>\n        <tr><td>Current Stage</td><td>{{ $('Stage Update Form').item.json['New Stage'] }}</td></tr>\n        <tr><td>Assigned Counsellor</td><td>{{ $('Find Student Record').item.json['Assigned Counsellor'] }}</td></tr>\n        <tr><td>Destination</td><td>{{ $('Find Student Record').item.json['Preferred Destination'] }}</td></tr>\n        <tr><td>Intended Course</td><td>{{ $('Find Student Record').item.json['Intended Course'] }}</td></tr>\n        <tr><td>Updated At</td><td>{{ $('Find Student Record').item.json['Stage Updated At'] }}</td></tr>\n      </table>\n    </div>\n\n    {{ $json.new_stage === 'Application Started' ?\n    '<div class=\"checklist\"><strong>Please have these documents ready:</strong><ul><li>International Passport (data page)</li><li>Academic transcripts and certificates</li><li>Statement of Purpose</li><li>Proof of funds and bank statements</li><li>Any other supporting documents as advised</li></ul></div>' :\n\n    $json.new_stage === 'Offer Letter Received' ?\n    '<div class=\"steps\"><strong>Your next steps:</strong><ol><li>Accept your offer and pay any required deposit</li><li>Obtain your CAS number or enrollment confirmation</li><li>Begin preparing your visa application documents</li><li>Confirm your financial requirements with your counsellor</li></ol></div>' :\n\n    $json.new_stage === 'Acceptance & Deposit Paid' ?\n    '<div class=\"steps\"><strong>Your next steps:</strong><ol><li>Your counsellor will request your CAS/I-20/CoE from the university</li><li>Verify all details on your enrollment document match your passport</li><li>Begin gathering your financial documents for visa application</li><li>Ensure your passport has at least 18 months validity remaining</li></ol></div>' :\n\n    $json.new_stage === 'CAS/I-20/CoE Issued' ?\n    '<div class=\"checklist\"><strong>Important checks:</strong><ul><li>Confirm your name on the document matches your passport exactly</li><li>Verify your course name, level and start date are correct</li><li>Check the tuition fee amount stated is accurate</li><li>Report any errors to your counsellor immediately</li></ul></div>' :\n\n    $json.new_stage === 'Pre-Visa Documentation' ?\n    '<div class=\"checklist\"><strong>Documents typically required at this stage:</strong><ul><li>Valid international passport (minimum 18 months validity)</li><li>Bank statements (minimum 6 months)</li><li>Sponsor letter and financial evidence (if applicable)</li><li>TB test certificate (mandatory for UK applicants)</li><li>Police clearance certificate (Canada and Australia)</li><li>Passport photographs (check specification with counsellor)</li></ul></div>' :\n\n    $json.new_stage === 'Visa Processing' ?\n    '<div class=\"tips\"><strong>Important reminders during this period:</strong><ul><li>Do not make non-refundable travel arrangements until visa is approved</li><li>Keep your phone and email active at all times</li><li>Do not travel internationally during this period</li><li>Stay in close contact with your counsellor</li></ul></div>' :\n\n    $json.new_stage === 'Visa Approved' ?\n    '<div class=\"checklist\"><strong>Pre-departure checklist:</strong><ul><li>Confirm travel dates and book flights</li><li>Arrange accommodation near your university</li><li>Set up a bank account in your destination country</li><li>Pack original documents including offer letter and visa</li><li>Attend pre-arrival orientation if applicable</li></ul></div>' :\n\n    $json.new_stage === 'Pre-Departure Briefing' ?\n    '<div class=\"steps\"><strong>Prepare the following before departure:</strong><ol><li>Book your flight and confirm airport transfer arrangements</li><li>Carry all original documents in your hand luggage</li><li>Set up a Wise or Revolut account for international spending</li><li>Confirm accommodation and key collection arrangements</li><li>Save your counsellor and emergency contacts on your phone</li></ol></div>' :\n\n    $json.new_stage === 'Visa Refused' ?\n    '<div class=\"tips\"><strong>What happens next:</strong><ul><li>Your counsellor will review the refusal letter in detail</li><li>A reapplication strategy will be developed for you</li><li>Alternative country or institution options will be explored</li><li>Do not be discouraged — many students succeed on reapplication</li></ul></div>' :\n\n    '' }}\n\n    <p>\n      {{ $json.new_stage === 'Visa Approved' || $json.new_stage === 'Enrolled/Arrived' ? 'With warmest congratulations,' : 'Warm regards,' }}<br>\n      <strong>The Study Abroad Team</strong>\n    </p>\n\n  </div>\n\n  <div class=\"footer\">\n    Reference ID: {{ $json.Student_ID }}<br>\n    .<br>\n    Please do not reply to this email directly.\n  </div>\n\n</div>\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [1200, 0],
+      "id": "a7de9b28-6acc-461a-a82d-89c39cbff0b3",
+      "name": "Notify Student of Stage Update",
+      "webhookId": "YOUR_NOTIFY_STUDENT_WEBHOOK_ID",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "Copy of StudyAbroad CRM",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_STUDENT_PIPELINE_SHEET_GID",
+          "mode": "list",
+          "cachedResultName": "Student Pipeline",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit#gid=YOUR_STUDENT_PIPELINE_SHEET_GID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Student_ID": "={{ $json.student_id }}",
+            "Current Stage": "={{ $json.new_stage }}",
+            "Stage Number": "={{ $json.stage_number }}",
+            "Stage Updated At": "={{ $json.stage_updated_at }}",
+            "Notes": "={{ $json.notes }}"
+          },
+          "matchingColumns": [
+            "Student_ID"
+          ],
+          "schema": [
+            {
+              "id": "Student_ID",
+              "displayName": "Student_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "WhatsApp Number",
+              "displayName": "WhatsApp Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Preferred Destination",
+              "displayName": "Preferred Destination",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Intended Course",
+              "displayName": "Intended Course",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Target Intake",
+              "displayName": "Target Intake",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI Status",
+              "displayName": "AI Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Readiness Score",
+              "displayName": "Readiness Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Assigned Counsellor",
+              "displayName": "Assigned Counsellor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Counsellor Email",
+              "displayName": "Counsellor Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Current Stage",
+              "displayName": "Current Stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Stage Number",
+              "displayName": "Stage Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Stage Updated At",
+              "displayName": "Stage Updated At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Drive Folder Link",
+              "displayName": "Drive Folder Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date Created",
+              "displayName": "Date Created",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Column 8",
+              "displayName": "Column 8",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Column 9",
+              "displayName": "Column 9",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Column 10",
+              "displayName": "Column 10",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Column 11",
+              "displayName": "Column 11",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Column 12",
+              "displayName": "Column 12",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Column 13",
+              "displayName": "Column 13",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Column 14",
+              "displayName": "Column 14",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Column 15",
+              "displayName": "Column 15",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Column 16",
+              "displayName": "Column 16",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [992, 0],
+      "id": "61cd1060-df7e-416c-be00-c3e2c7edd455",
+      "name": "Update Student Stage",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "YOUR_TEAM_NOTIFICATION_EMAIL",
+        "subject": "=📋 Stage Update: {{ $('Merge').item.json['Full Name'] }} → {{ $('Merge').item.json['New Stage'] }}",
+        "message": "=<!DOCTYPE html> <html> <head>   <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap\" rel=\"stylesheet\">   <style>     body { font-family: 'Inter', Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 24px; color: #111827; }     .container { max-width: 680px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }     .header { background: linear-gradient(135deg, #1a3c6e, #274f8a); padding: 28px 32px; text-align: center; }     .header h1 { margin: 0; color: #ffffff; font-size: 22px; font-weight: 700; }     .header p { margin: 8px 0 0; color: #d7e4f7; font-size: 13px; }     .stage-banner { background: #f59e0b; color: #ffffff; text-align: center; padding: 12px; font-size: 15px; font-weight: 600; }     .section { padding: 24px 30px; border-bottom: 1px solid #eef2f7; }     .section-title { margin: 0 0 16px; color: #1a3c6e; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; }     .info-table { width: 100%; border-collapse: collapse; }     .info-table td { padding: 9px 10px; font-size: 14px; color: #374151; vertical-align: top; border-bottom: 1px solid #f3f4f6; }     .info-table td:first-child { font-weight: 600; color: #1a3c6e; width: 40%; }     .info-table tr:last-child td { border-bottom: none; }     .stage-change { background: #f0f4ff; border-radius: 10px; padding: 16px 20px; display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }     .stage-old { background: #e5e7eb; color: #6b7280; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; }     .stage-arrow { font-size: 18px; color: #1a3c6e; font-weight: 700; }     .stage-new { background: #1a3c6e; color: #ffffff; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; }     .notes-box { background: #f8fafc; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 14px 18px; font-size: 14px; color: #374151; line-height: 1.7; }     .footer { background: #f8fafc; text-align: center; padding: 20px; color: #9ca3af; font-size: 12px; line-height: 1.7; }   </style> </head> <body> <div class=\"container\">    <div class=\"header\">     <h1>📋 Student Stage Update</h1>     <p>A student record has been updated in the pipeline</p>   </div>    <div class=\"stage-banner\">  {{ $('Find Student Record').item.json['Current Stage'] }}    →  {{ $('Merge').item.json['New Stage'] }}  </div>    <div class=\"section\">     <h2 class=\"section-title\">📊 Stage Change</h2>     <div class=\"stage-change\">       <span class=\"stage-old\">{{ $('Find Student Record').item.json['Current Stage'] }}</span>       <span class=\"stage-arrow\">→</span>       <span class=\"stage-new\">{{ $('Merge').item.json['New Stage'] }}</span>     </div>      <table class=\"info-table\">       <tr><td>Student ID</td>{{ $('Find Student Record').item.json.Student_ID }}<td></td></tr>       <tr><td>Full Name</td><td>{{ $('Find Student Record').item.json['Full Name'] }}</td></tr>       <tr><td>WhatsApp Number</td><td>{{ $('Find Student Record').item.json['WhatsApp Number'] }}</td></tr>       <tr><td>Preferred Destination</td><td>{{ $('Find Student Record').item.json['Preferred Destination'] }}</td></tr>       <tr><td>Intended Course</td><td>{{ $('Find Student Record').item.json['Intended Course'] }}</td></tr>       <tr><td>Assigned Counsellor</td><td>{{ $('Find Student Record').item.json['Assigned Counsellor'] }}</td></tr>       <tr><td>Updated By</td><td>{{ $('Find Student Record').item.json['Assigned Counsellor'] }}</td></tr>       <tr><td>Stage Updated At</td><td>{{ $('Find Student Record').item.json['Stage Updated At'] }}</td></tr>       <tr>         <td>Student Folder</td>         <td><a href=\"{{ $('Find Student Record').item.json['Drive Folder Link'] }}\" style=\"color:#1a3c6e; font-weight:600;\">Open Folder</a></td>       </tr>     </table>   </div>    {{ $json.notes ? '<div class=\"section\"><h2 class=\"section-title\">📝 Counsellor Notes</h2><div class=\"notes-box\">' + $json.notes + '</div></div>' : '' }}    <div class=\"footer\">          Please do not reply to this email.   </div>  </div> </body> </html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [1408, 0],
+      "id": "f083e47f-12e2-4eda-986d-32b20d22ea01",
+      "name": "Notify Team of Stage Change",
+      "webhookId": "YOUR_NOTIFY_TEAM_WEBHOOK_ID",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [560, -160],
+      "id": "a4198db8-6944-4760-af8c-7110efed6329",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Stage Update Form": {
+      "main": [
+        [
+          {
+            "node": "Find Student Record",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Student Record": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Validate Student Record": {
+      "main": [
+        [
+          {
+            "node": "Update Student Stage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Student Stage": {
+      "main": [
+        [
+          {
+            "node": "Notify Student of Stage Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Student of Stage Update": {
+      "main": [
+        [
+          {
+            "node": "Notify Team of Stage Change",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Validate Student Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "YOUR_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "id": "YOUR_WORKFLOW_ID",
+  "tags": []
+}
